@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My Work Time</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="My Work Time">
+<meta name="theme-color" content="#C4753C">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Crect width='180' height='180' rx='36' fill='%23C4753C'/%3E%3Ctext x='50%25' y='58%25' font-size='96' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%95%92%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' rx='14' fill='%23C4753C'/%3E%3Ctext x='50%25' y='58%25' font-size='36' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%95%92%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #EEF3F1; --surface:#FFFFFF; --surface-alt:#E2EAE7;
+    --ink:#1F2C2A; --ink-soft:#5C6E6A; --accent:#C4753C; --accent-ink:#FFFFFF;
+    --good:#2F8F6F; --good-bg:#E3F2EC; --warn:#C98A2E; --warn-bg:#FBEFDD;
+    --danger:#B3453B; --danger-bg:#FAE6E3; --line:#D7E0DC;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  :root:not([data-theme="light"]) { @media (prefers-color-scheme: dark) {
+    --bg:#141B1B; --surface:#1D2726; --surface-alt:#263130; --ink:#EAF2EF; --ink-soft:#9FB2AC;
+    --accent:#DE9B5C; --accent-ink:#1B1310; --good:#52B091; --good-bg:#1D332B;
+    --warn:#E0AE55; --warn-bg:#35301C; --danger:#E17168; --danger-bg:#3A2321; --line:#33403E;
+  }}
+  :root[data-theme="dark"] {
+    --bg:#141B1B; --surface:#1D2726; --surface-alt:#263130; --ink:#EAF2EF; --ink-soft:#9FB2AC;
+    --accent:#DE9B5C; --accent-ink:#1B1310; --good:#52B091; --good-bg:#1D332B;
+    --warn:#E0AE55; --warn-bg:#35301C; --danger:#E17168; --danger-bg:#3A2321; --line:#33403E;
+  }
+  html,body{height:100%;} * { box-sizing:border-box; }
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans JP",system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:460px;margin:0 auto;padding:18px 14px 90px;}
+  header.top{display:flex;align-items:center;justify-content:space-between;padding-top:env(safe-area-inset-top,0px);margin-bottom:12px;}
+  header.top h1{font-family:"Zen Maru Gothic",sans-serif;font-size:19px;font-weight:900;margin:0;letter-spacing:.01em;}
+  header.top .sub{font-size:11px;color:var(--ink-soft);margin-top:1px;}
+  .gear{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;}
+
+  .banner{border-radius:16px;padding:13px 14px;margin-bottom:12px;font-size:13px;line-height:1.6;}
+  .banner.ten{background:var(--warn-bg);color:var(--warn);}
+  .banner.five{background:var(--danger-bg);color:var(--danger);}
+  .banner b{display:block;font-family:"Zen Maru Gothic",sans-serif;font-size:14px;margin-bottom:4px;}
+
+  .hero{background:var(--surface);border-radius:22px;padding:20px 18px;text-align:center;border:1px solid var(--line);}
+  .hero .label{font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;}
+  .hero .num{font-family:"Zen Maru Gothic",sans-serif;font-weight:900;font-size:50px;line-height:1;margin:2px 0;}
+  .hero .num.good{color:var(--good);} .hero .num.warn{color:var(--warn);} .hero .num.danger{color:var(--danger);}
+  .hero .sub{display:inline-block;margin-top:6px;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:500;}
+  .sub.good{background:var(--good-bg);color:var(--good);} .sub.warn{background:var(--warn-bg);color:var(--warn);} .sub.danger{background:var(--danger-bg);color:var(--danger);}
+  .hero .cyclelabel{font-size:11.5px;color:var(--ink-soft);margin-top:6px;}
+
+  .statrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;}
+  .statcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 6px;text-align:center;}
+  .statcard .slabel{font-size:10.5px;color:var(--ink-soft);margin-bottom:3px;}
+  .statcard .sval{font-family:"Zen Maru Gothic",sans-serif;font-weight:700;font-size:15px;}
+  .statcard .sval.danger{color:var(--danger);} .statcard .sval.good{color:var(--good);}
+
+  .todaysched{background:var(--surface-alt);border-radius:14px;padding:11px 14px;margin-top:12px;font-size:12.5px;color:var(--ink-soft);}
+  .todaysched b{color:var(--ink);font-weight:700;}
+  .todaysched .row{display:flex;justify-content:space-between;margin-top:3px;}
+
+  .addbtn{width:100%;margin-top:12px;padding:15px;border-radius:16px;border:none;background:var(--accent);color:var(--accent-ink);font-family:"Zen Maru Gothic",sans-serif;font-size:15.5px;font-weight:700;cursor:pointer;}
+  .row2{display:flex;gap:8px;margin-top:9px;}
+  .reportbtn,.schedbtn{flex:1;padding:12px;border-radius:16px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-family:"Zen Maru Gothic",sans-serif;font-size:13.5px;font-weight:700;cursor:pointer;}
+
+  section.block{margin-top:20px;}
+  section.block h2{font-size:13px;color:var(--ink-soft);font-weight:500;margin:0 0 8px 4px;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;}
+  .entry{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--line);gap:10px;}
+  .entry:last-child{border-bottom:none;}
+  .entry .etype{font-weight:500;font-size:14px;} .entry .etimes{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+  .entry .edelta{font-family:"Zen Maru Gothic",sans-serif;font-weight:700;font-size:14.5px;white-space:nowrap;}
+  .entry .edelta.good{color:var(--good);} .entry .edelta.warn{color:var(--warn);} .entry .edelta.danger{color:var(--danger);}
+  .entry .del{background:none;border:none;color:var(--ink-soft);font-size:18px;cursor:pointer;padding:2px 4px;}
+  .empty{padding:20px 14px;text-align:center;color:var(--ink-soft);font-size:13px;}
+  .dayhead{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface-alt);font-size:12.5px;}
+  .dayhead .dtot{font-weight:700;font-family:"Zen Maru Gothic",sans-serif;}
+
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-end;justify-content:center;z-index:50;}
+  .overlay.open{display:flex;}
+  .sheet{background:var(--surface);width:100%;max-width:460px;max-height:88vh;overflow-y:auto;border-radius:22px 22px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));}
+  .sheet h3{font-family:"Zen Maru Gothic",sans-serif;margin:0 0 12px;font-size:16px;}
+  .field{margin-bottom:11px;} .field label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:4px;}
+  .typegrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+  .typegrid button{padding:10px 6px;border-radius:12px;border:1px solid var(--line);background:var(--surface-alt);color:var(--ink);font-size:13px;cursor:pointer;}
+  .typegrid button.sel{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+  input[type="time"],input[type="text"],input[type="number"],select{width:100%;padding:10px 10px;border-radius:12px;border:1px solid var(--line);background:var(--surface-alt);color:var(--ink);font-size:14.5px;font-family:inherit;}
+  .schedpreview{background:var(--surface-alt);border-radius:12px;padding:10px 12px;font-size:13.5px;margin-bottom:11px;}
+  .schedpreview .lbl{color:var(--ink-soft);font-size:11.5px;}
+  .nowbtn{margin-top:5px;font-size:11.5px;color:var(--accent);background:none;border:none;cursor:pointer;padding:2px 0;}
+  .sheetbtns{display:flex;gap:9px;margin-top:14px;}
+  .sheetbtns button{flex:1;padding:12px;border-radius:13px;font-size:14px;font-weight:500;border:none;cursor:pointer;}
+  .cancel{background:var(--surface-alt);color:var(--ink-soft);} .save{background:var(--accent);color:var(--accent-ink);font-weight:700;}
+  .settingrow{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);gap:10px;}
+  .settingrow:last-child{border-bottom:none;} .settingrow span{font-size:13.5px;}
+  .settingrow input{width:80px;text-align:right;padding:8px;font-size:13.5px;}
+  .hint{font-size:11.5px;color:var(--ink-soft);margin-top:6px;line-height:1.5;}
+  .miniAction{padding:8px 14px;border-radius:10px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;}
+
+  .monthnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .monthnav button{background:var(--surface-alt);border:none;border-radius:10px;width:34px;height:34px;font-size:16px;color:var(--ink);cursor:pointer;}
+  .monthnav .mlabel{font-family:"Zen Maru Gothic",sans-serif;font-weight:700;font-size:15px;}
+  .tplrow{display:grid;grid-template-columns:34px 1fr 1fr 1fr 1fr 30px;gap:5px;align-items:center;padding:5px 0;font-size:11px;}
+  .tplrow input[type="time"]{padding:6px 4px;font-size:11px;}
+  .applybtn{width:100%;margin:8px 0 14px;padding:11px;border-radius:12px;border:none;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:13px;cursor:pointer;}
+  .daylist{max-height:260px;overflow-y:auto;border-top:1px solid var(--line);margin-top:6px;}
+  .dayrow{display:grid;grid-template-columns:52px 1fr 1fr 1fr 1fr 26px;gap:5px;align-items:center;padding:6px 2px;border-bottom:1px solid var(--line);font-size:10.5px;}
+  .dayrow.off{opacity:.45;}
+  .dayrow input[type="time"]{padding:5px 3px;font-size:10.5px;}
+  .dayrow .dlabel{font-size:11px;font-weight:500;}
+  .dayrow input[type="checkbox"]{width:16px;height:16px;}
+  .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(12px);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:80;white-space:nowrap;max-width:88vw;overflow:hidden;text-overflow:ellipsis;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div><h1>My Work Time</h1><div class="sub">自分だけの勤務セルフ管理</div></div>
+    <button class="gear" id="gearBtn">⚙</button>
+  </header>
+
+  <div class="banner ten" id="banner10" style="display:none;"></div>
+  <div class="banner five" id="banner5" style="display:none;"></div>
+
+  <div class="hero">
+    <div class="label">今月累計差</div>
+    <div class="num" id="cycleNum">0分</div>
+    <div class="sub" id="cycleSub">きょうも順調です</div>
+    <div class="cyclelabel" id="cycleRange"></div>
+    <div class="statrow">
+      <div class="statcard"><div class="slabel">実績時間</div><div class="sval" id="statActual">0h00</div></div>
+      <div class="statcard"><div class="slabel">基準まで残り</div><div class="sval" id="statRemain">-</div></div>
+      <div class="statcard"><div class="slabel">月末見込み</div><div class="sval" id="statForecast">-</div></div>
+    </div>
+  </div>
+
+  <div class="todaysched" id="todaySched"></div>
+
+  <button class="addbtn" id="openAdd">＋ 打刻を記録する（約10秒）</button>
+  <div class="row2">
+    <button class="reportbtn" id="reportBtn">📩 LINEで報告</button>
+    <button class="schedbtn" id="openSched">🗓 シフト予定を登録</button>
+  </div>
+
+  <section class="block"><h2>きょうの記録</h2><div class="card" id="todayList"></div></section>
+  <section class="block"><h2>このサイクルの記録</h2><div class="card" id="historyList"></div></section>
+</div>
+
+<div class="overlay" id="addOverlay"><div class="sheet">
+  <h3>打刻を記録</h3>
+  <div class="field"><label>種類</label>
+    <div class="typegrid" id="typeGrid">
+      <button data-t="出勤">出勤</button><button data-t="休憩入り">休憩入り</button>
+      <button data-t="休憩戻り">休憩戻り</button><button data-t="退勤">退勤</button>
+    </div>
+  </div>
+  <div class="schedpreview"><span class="lbl">今日の予定：</span><span id="schedPreviewVal">-</span></div>
+  <div class="field"><label>実際に打刻した時刻</label>
+    <input type="time" id="actualTime">
+    <button class="nowbtn" id="useNow">今の時刻を使う</button>
+  </div>
+  <div class="sheetbtns"><button class="cancel" id="cancelAdd">キャンセル</button><button class="save" id="saveAdd">記録する</button></div>
+</div></div>
+
+<div class="overlay" id="settingsOverlay"><div class="sheet">
+  <h3>設定</h3>
+  <div class="field"><label>氏名（LINE報告時に使用）</label><input type="text" id="nameInput" placeholder="例：山田花子"></div>
+  <div class="settingrow"><span>締め開始日</span><select id="cycleStartSel" style="width:90px;"></select></div>
+  <div class="settingrow"><span>所定時間（月・h）</span><input type="number" id="regularInput" step="0.5"></div>
+  <div class="settingrow"><span>調整管理枠（月・h）</span><input type="number" id="adjustInput" step="0.5"></div>
+  <div class="settingrow"><span>注意ライン（分）</span><input type="number" id="warnInput" min="1"></div>
+  <div class="settingrow"><span>要対応ライン（分）</span><input type="number" id="dangerInput" min="1"></div>
+  <div class="settingrow"><span>データをバックアップ</span><button class="miniAction" id="backupBtn">保存する</button></div>
+  <div class="settingrow"><span>バックアップから復元</span><button class="miniAction" id="restoreBtn">ファイルを選ぶ</button><input type="file" id="restoreFile" accept="application/json" style="display:none;"></div>
+  <div class="hint">データはこの端末の中だけに保存されます。サーバーには送信されません。バックアップも同様に、この端末上でファイルとして保存されるだけです。</div>
+  <div class="sheetbtns"><button class="cancel" id="closeSettings">閉じる</button></div>
+</div></div>
+
+<div class="overlay" id="schedOverlay"><div class="sheet">
+  <h3>シフト予定の登録</h3>
+  <div class="monthnav">
+    <button id="prevMonth">＜</button>
+    <div class="mlabel" id="monthLabel">-</div>
+    <button id="nextMonth">＞</button>
+  </div>
+  <div class="hint" style="margin-top:0;">曜日ごとのパターンを決めて「今月に一括適用」を押すと、下の日別リストに反映されます。個別の日はあとから修正できます。</div>
+  <div id="tplRows"></div>
+  <button class="applybtn" id="applyTpl">今月に一括適用</button>
+  <div class="hint" style="margin-bottom:2px;">日別リスト（休みなら「休」にチェック）</div>
+  <div class="daylist" id="dayList"></div>
+  <div class="sheetbtns"><button class="cancel" id="closeSched">閉じる</button></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var STORE_KEY = 'my_worktime_v1';
+  var TYPES = ['出勤','休憩入り','休憩戻り','退勤'];
+  var DOWLABEL = ['日','月','火','水','木','金','土'];
+  var state = {
+    cycleStartDay: 21, name: '', warnMin: 15, dangerMin: 30,
+    regularHours: 177, adjustHours: 20,
+    schedule: {}, weeklyTemplate: {}, entries: {}
+  };
+
+  function loadState(){
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (raw) {
+        var p = JSON.parse(raw);
+        if (p && typeof p === 'object') {
+          state.cycleStartDay = p.cycleStartDay || 21;
+          state.name = p.name || '';
+          state.warnMin = p.warnMin || 15;
+          state.dangerMin = p.dangerMin || 30;
+          state.regularHours = (p.regularHours != null) ? p.regularHours : 177;
+          state.adjustHours = (p.adjustHours != null) ? p.adjustHours : 20;
+          state.schedule = p.schedule || {};
+          state.weeklyTemplate = p.weeklyTemplate || {};
+          state.entries = p.entries || {};
+        }
+      }
+    } catch(e){}
+  }
+  function saveState(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){} }
+
+  function pad(n){ return n<10?'0'+n:''+n; }
+  function isoDate(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+  function fmtMD(d){ return (d.getMonth()+1)+'/'+d.getDate(); }
+  function hm(mins){
+    var sign = mins < 0 ? '-' : '';
+    var a = Math.abs(Math.round(mins));
+    return sign + Math.floor(a/60) + 'h' + pad(a%60);
+  }
+
+  function cycleRange(today){
+    var y=today.getFullYear(), m=today.getMonth(), day=today.getDate();
+    var startDay = state.cycleStartDay;
+    var sY=y, sM=m;
+    if (day < startDay) { sM -= 1; if (sM<0){ sM=11; sY-=1; } }
+    var start = new Date(sY, sM, startDay);
+    var end = new Date(start); end.setMonth(end.getMonth()+1); end.setDate(end.getDate()-1);
+    return { start: start, end: end };
+  }
+
+  function minutesDiff(type, sched, actual){
+    if (!sched || !actual) return 0;
+    var s=sched.split(':').map(Number), a=actual.split(':').map(Number);
+    var sMin=s[0]*60+s[1], aMin=a[0]*60+a[1];
+    if (type==='出勤' || type==='休憩戻り') return sMin-aMin;
+    return aMin-sMin;
+  }
+  function levelOf(mins){
+    var a=Math.abs(mins);
+    if (a>=state.dangerMin) return 'danger';
+    if (a>=state.warnMin) return 'warn';
+    return 'good';
+  }
+
+  function getSchedFor(dateKey, type){
+    var d = state.schedule[dateKey];
+    if (!d || d.dayOff) return null;
+    return d[type] || null;
+  }
+  function isDayOff(dateKey){
+    var d = state.schedule[dateKey];
+    return !!(d && d.dayOff);
+  }
+  function daySchedMinutes(dateKey){
+    var d = state.schedule[dateKey];
+    if (!d || d.dayOff) return 0;
+    var total = 0;
+    if (d['出勤'] && d['休憩入り']) total += diffMin(d['出勤'], d['休憩入り']);
+    if (d['休憩戻り'] && d['退勤']) total += diffMin(d['休憩戻り'], d['退勤']);
+    return total;
+  }
+  function diffMin(t1, t2){
+    var a=t1.split(':').map(Number), b=t2.split(':').map(Number);
+    return (b[0]*60+b[1]) - (a[0]*60+a[1]);
+  }
+  function dayWorkedMinutes(dateKey){
+    var list = state.entries[dateKey];
+    if (!list) return 0;
+    var byType = {};
+    list.forEach(function(e){ byType[e.type] = e.actual; });
+    var total = 0;
+    if (byType['出勤'] && byType['休憩入り']) total += diffMin(byType['出勤'], byType['休憩入り']);
+    if (byType['休憩戻り'] && byType['退勤']) total += diffMin(byType['休憩戻り'], byType['退勤']);
+    return total;
+  }
+
+  function todayRemainingSched(dateKey){
+    var d = state.schedule[dateKey];
+    if (!d || d.dayOff) return 0;
+    var list = state.entries[dateKey] || [];
+    var byType = {};
+    list.forEach(function(e){ byType[e.type] = e.actual; });
+    var total = 0;
+    var haveMorningActual = byType['出勤'] && byType['休憩入り'];
+    if (!haveMorningActual && d['出勤'] && d['休憩入り']) total += diffMin(d['出勤'], d['休憩入り']);
+    var haveAfternoonActual = byType['休憩戻り'] && byType['退勤'];
+    if (!haveAfternoonActual && d['休憩戻り'] && d['退勤']) total += diffMin(d['休憩戻り'], d['退勤']);
+    return total;
+  }
+
+  function cycleStats(){
+    var today = new Date();
+    var r = cycleRange(today);
+    var todayKey = isoDate(today);
+    var deltaTotal = 0, actualMinutes = 0, futureSched = 0;
+    var d = new Date(r.start);
+    while (d <= r.end) {
+      var key = isoDate(d);
+      if (state.entries[key]) {
+        state.entries[key].forEach(function(e){ deltaTotal += e.delta; });
+        actualMinutes += dayWorkedMinutes(key);
+      }
+      if (key > todayKey) {
+        futureSched += daySchedMinutes(key);
+      }
+      d.setDate(d.getDate()+1);
+    }
+    var todayRemain = todayRemainingSched(todayKey);
+    var baselineMin = (Number(state.regularHours||0) + Number(state.adjustHours||0)) * 60;
+    var forecast = actualMinutes + todayRemain + futureSched;
+    var remain = baselineMin - actualMinutes;
+    return { range:r, deltaTotal:deltaTotal, actualMinutes:actualMinutes, baselineMin:baselineMin, remain:remain, forecast:forecast };
+  }
+
+  function remainingWorkDays(range, todayKey){
+    var count = 0;
+    var d = new Date(range.start);
+    while (d <= range.end) {
+      var key = isoDate(d);
+      if (key > todayKey && state.schedule[key] && !state.schedule[key].dayOff) count++;
+      d.setDate(d.getDate()+1);
+    }
+    return count;
+  }
+
+  function render(){
+    var today = new Date();
+    var todayKey = isoDate(today);
+    var st = cycleStats();
+    var lvl = levelOf(st.deltaTotal);
+
+    var numEl = document.getElementById('cycleNum');
+    numEl.textContent = (st.deltaTotal>0?'+':'') + Math.round(st.deltaTotal) + '分';
+    numEl.className = 'num ' + lvl;
+    var subEl = document.getElementById('cycleSub');
+    var a = Math.abs(Math.round(st.deltaTotal));
+    subEl.textContent = a===0 ? 'きょうも順調です' : (st.deltaTotal>0 ? '実働より'+a+'分多く記録' : '実働より'+a+'分少なく記録');
+    subEl.className = 'sub ' + lvl;
+    document.getElementById('cycleRange').textContent = fmtMD(st.range.start)+' 〜 '+fmtMD(st.range.end)+' のサイクル';
+
+    document.getElementById('statActual').textContent = hm(st.actualMinutes);
+    var remainEl = document.getElementById('statRemain');
+    remainEl.textContent = st.remain >= 0 ? ('あと'+hm(st.remain)) : ('超過'+hm(Math.abs(st.remain)));
+    remainEl.className = 'sval ' + (st.remain < 0 ? 'danger' : 'good');
+    var fcEl = document.getElementById('statForecast');
+    fcEl.textContent = hm(st.forecast);
+    fcEl.className = 'sval ' + (st.forecast > st.baselineMin ? 'danger' : 'good');
+
+    // reminder banners
+    var daysUntilEnd = Math.round((st.range.end - today) / 86400000);
+    var b10 = document.getElementById('banner10'), b5 = document.getElementById('banner5');
+    b10.style.display = 'none'; b5.style.display = 'none';
+    if (daysUntilEnd >= 0 && daysUntilEnd <= 10) {
+      var rwd = remainingWorkDays(st.range, todayKey);
+      var perShift = rwd > 0 ? Math.round(st.deltaTotal / rwd) : null;
+      var msg = '<b>締め'+daysUntilEnd+'日前です</b>現在の差：'+(st.deltaTotal>0?'+':'')+Math.round(st.deltaTotal)+'分／残り勤務日数：'+rwd+'日'
+        + (perShift!==null && perShift!==0 ? '／1勤務あたり'+(perShift>0?'-':'+')+Math.abs(perShift)+'分を目安に調整' : '');
+      if (daysUntilEnd <= 5) { b5.innerHTML = msg; b5.style.display = 'block'; }
+      else { b10.innerHTML = msg; b10.style.display = 'block'; }
+    }
+
+    // today schedule preview
+    var ts = document.getElementById('todaySched');
+    if (isDayOff(todayKey)) {
+      ts.innerHTML = '<b>今日のシフト：</b>休みの日として登録されています';
+    } else {
+      var any = TYPES.some(function(t){ return getSchedFor(todayKey, t); });
+      if (!any) {
+        ts.innerHTML = '<b>今日のシフト予定が未登録です。</b>「🗓 シフト予定を登録」から入れてください。';
+      } else {
+        var rows = TYPES.map(function(t){ return '<div class="row"><span>'+t+'</span><span>'+(getSchedFor(todayKey,t)||'—')+'</span></div>'; }).join('');
+        ts.innerHTML = '<b>今日の予定</b>' + rows;
+      }
+    }
+
+    // today's entries
+    var todayList = document.getElementById('todayList');
+    var todayEntries = state.entries[todayKey] || [];
+    if (todayEntries.length === 0) {
+      todayList.innerHTML = '<div class="empty">まだ記録がありません。</div>';
+    } else {
+      todayList.innerHTML = '';
+      todayEntries.forEach(function(e, idx){ todayList.appendChild(entryRow(e, todayKey, idx)); });
+    }
+
+    // history
+    var histList = document.getElementById('historyList');
+    var keys = Object.keys(state.entries).filter(function(k){
+      var d2 = new Date(k+'T00:00:00');
+      return d2 >= st.range.start && d2 <= st.range.end && k !== todayKey && state.entries[k].length>0;
+    }).sort().reverse();
+    if (keys.length===0) {
+      histList.innerHTML = '<div class="empty">このサイクルの他の記録はまだありません。</div>';
+    } else {
+      histList.innerHTML = '';
+      keys.forEach(function(k){
+        var entries = state.entries[k];
+        var tot = entries.reduce(function(s,e){return s+e.delta;},0);
+        var head = document.createElement('div'); head.className='dayhead';
+        var d2 = new Date(k+'T00:00:00');
+        head.innerHTML = '<span>'+fmtMD(d2)+'</span><span class="dtot '+levelOf(tot)+'">'+(tot>0?'+':'')+Math.round(tot)+'分</span>';
+        histList.appendChild(head);
+      });
+    }
+  }
+
+  function entryRow(e, dayKey, idx){
+    var row = document.createElement('div'); row.className='entry';
+    var lvl = levelOf(e.delta);
+    row.innerHTML = '<div><div class="etype">'+e.type+'</div><div class="etimes">予定 '+(e.sched||'—')+' → 実際 '+e.actual+'</div></div>'
+      + '<div style="display:flex;align-items:center;gap:8px;"><div class="edelta '+lvl+'">'+(e.delta>0?'+':'')+Math.round(e.delta)+'分</div>'
+      + '<button class="del" data-day="'+dayKey+'" data-idx="'+idx+'">✕</button></div>';
+    return row;
+  }
+  document.addEventListener('click', function(ev){
+    if (ev.target.classList.contains('del')) {
+      var day = ev.target.getAttribute('data-day');
+      var idx = parseInt(ev.target.getAttribute('data-idx'),10);
+      state.entries[day].splice(idx,1);
+      saveState(); render();
+    }
+  });
+
+  // ---- add entry sheet ----
+  var addOverlay = document.getElementById('addOverlay');
+  var typeGrid = document.getElementById('typeGrid');
+  var selectedType = '出勤';
+  function suggestType(){
+    var todayKey = isoDate(new Date());
+    var done = (state.entries[todayKey]||[]).map(function(e){return e.type;});
+    for (var i=0;i<TYPES.length;i++){ if (done.indexOf(TYPES[i])===-1) return TYPES[i]; }
+    return TYPES[0];
+  }
+  function setTypeUI(t){
+    selectedType = t;
+    Array.prototype.forEach.call(typeGrid.children, function(b){ b.classList.toggle('sel', b.getAttribute('data-t')===t); });
+    var todayKey = isoDate(new Date());
+    var s = getSchedFor(todayKey, t);
+    document.getElementById('schedPreviewVal').textContent = s || '未登録（設定から登録してください）';
+  }
+  typeGrid.addEventListener('click', function(ev){
+    if (ev.target.tagName!=='BUTTON') return;
+    setTypeUI(ev.target.getAttribute('data-t'));
+  });
+  document.getElementById('openAdd').addEventListener('click', function(){
+    setTypeUI(suggestType());
+    var now = new Date();
+    document.getElementById('actualTime').value = pad(now.getHours())+':'+pad(now.getMinutes());
+    addOverlay.classList.add('open');
+  });
+  document.getElementById('cancelAdd').addEventListener('click', function(){ addOverlay.classList.remove('open'); });
+  document.getElementById('useNow').addEventListener('click', function(){
+    var now = new Date();
+    document.getElementById('actualTime').value = pad(now.getHours())+':'+pad(now.getMinutes());
+  });
+  document.getElementById('saveAdd').addEventListener('click', function(){
+    var actual = document.getElementById('actualTime').value;
+    if (!actual) return;
+    var todayKey = isoDate(new Date());
+    var sched = getSchedFor(todayKey, selectedType);
+    if (!state.entries[todayKey]) state.entries[todayKey] = [];
+    var delta = sched ? minutesDiff(selectedType, sched, actual) : 0;
+    state.entries[todayKey].push({ type:selectedType, sched:sched, actual:actual, delta:delta });
+    saveState();
+    addOverlay.classList.remove('open');
+    render();
+  });
+
+  // ---- settings ----
+  var settingsOverlay = document.getElementById('settingsOverlay');
+  var nameInput = document.getElementById('nameInput');
+  var cycleStartSel = document.getElementById('cycleStartSel');
+  for (var i=1;i<=28;i++){ var o=document.createElement('option'); o.value=i; o.textContent=i+'日'; cycleStartSel.appendChild(o); }
+  var regularInput = document.getElementById('regularInput');
+  var adjustInput = document.getElementById('adjustInput');
+  var warnInput = document.getElementById('warnInput');
+  var dangerInput = document.getElementById('dangerInput');
+  document.getElementById('gearBtn').addEventListener('click', function(){
+    nameInput.value = state.name; cycleStartSel.value = state.cycleStartDay;
+    regularInput.value = state.regularHours; adjustInput.value = state.adjustHours;
+    warnInput.value = state.warnMin; dangerInput.value = state.dangerMin;
+    settingsOverlay.classList.add('open');
+  });
+  document.getElementById('closeSettings').addEventListener('click', function(){ settingsOverlay.classList.remove('open'); });
+  nameInput.addEventListener('change', function(){ state.name = nameInput.value.trim(); saveState(); });
+  cycleStartSel.addEventListener('change', function(){ state.cycleStartDay = parseInt(cycleStartSel.value,10); saveState(); render(); });
+  regularInput.addEventListener('change', function(){ state.regularHours = parseFloat(regularInput.value)||0; saveState(); render(); });
+  adjustInput.addEventListener('change', function(){ state.adjustHours = parseFloat(adjustInput.value)||0; saveState(); render(); });
+  warnInput.addEventListener('change', function(){ var v=parseInt(warnInput.value,10); if(v>0){state.warnMin=v; saveState(); render();} });
+  dangerInput.addEventListener('change', function(){ var v=parseInt(dangerInput.value,10); if(v>0){state.dangerMin=v; saveState(); render();} });
+
+  // ---- toast ----
+  var toastEl = document.getElementById('toast'); var toastTimer=null;
+  function showToast(msg){
+    toastEl.textContent = msg; toastEl.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, 3400);
+  }
+
+  // ---- LINE report ----
+  document.getElementById('reportBtn').addEventListener('click', function(){
+    if (!state.name) {
+      showToast('先に⚙設定で氏名を入れてください');
+      document.getElementById('gearBtn').click();
+      nameInput.focus();
+      return;
+    }
+    var st = cycleStats();
+    var range = fmtMD(st.range.start)+'〜'+fmtMD(st.range.end);
+    var text = '【My Work Time 報告】\n氏名：'+state.name+'\n期間：'+range
+      +'\n累計差：'+(st.deltaTotal>0?'+':'')+Math.round(st.deltaTotal)+'分'
+      +'\n現在実績：'+hm(st.actualMinutes)
+      +'\n基準まで：'+(st.remain>=0?('あと'+hm(st.remain)):('超過'+hm(Math.abs(st.remain))));
+    if (navigator.share) {
+      navigator.share({ text:text }).catch(function(){});
+    } else {
+      try { navigator.clipboard.writeText(text); showToast('コピーしました。LINEに貼り付けて送信してください'); }
+      catch(e) { window.prompt('この内容をコピーしてLINEに貼り付けてください', text); }
+    }
+  });
+
+  // ---- schedule editor ----
+  var schedOverlay = document.getElementById('schedOverlay');
+  var viewMonth = new Date(); viewMonth.setDate(1);
+  var tplRows = document.getElementById('tplRows');
+  var dayList = document.getElementById('dayList');
+
+  function buildTplRows(){
+    tplRows.innerHTML = '';
+    for (var dow=0; dow<7; dow++){
+      var t = state.weeklyTemplate[dow] || {};
+      var row = document.createElement('div'); row.className='tplrow';
+      row.innerHTML = '<span class="dlabel">'+DOWLABEL[dow]+'</span>'
+        + '<input type="time" data-dow="'+dow+'" data-f="出勤" value="'+(t['出勤']||'')+'">'
+        + '<input type="time" data-dow="'+dow+'" data-f="休憩入り" value="'+(t['休憩入り']||'')+'">'
+        + '<input type="time" data-dow="'+dow+'" data-f="休憩戻り" value="'+(t['休憩戻り']||'')+'">'
+        + '<input type="time" data-dow="'+dow+'" data-f="退勤" value="'+(t['退勤']||'')+'">'
+        + '<input type="checkbox" data-dow="'+dow+'" data-f="dayOff" '+(t.dayOff?'checked':'')+' title="休み">';
+      tplRows.appendChild(row);
+    }
+    tplRows.querySelectorAll('input').forEach(function(inp){
+      inp.addEventListener('change', function(){
+        var dow = parseInt(inp.getAttribute('data-dow'),10);
+        var f = inp.getAttribute('data-f');
+        if (!state.weeklyTemplate[dow]) state.weeklyTemplate[dow] = {};
+        state.weeklyTemplate[dow][f] = (f==='dayOff') ? inp.checked : inp.value;
+        saveState();
+      });
+    });
+  }
+
+  function buildDayList(){
+    dayList.innerHTML = '';
+    var y = viewMonth.getFullYear(), m = viewMonth.getMonth();
+    var last = new Date(y, m+1, 0).getDate();
+    for (var day=1; day<=last; day++){
+      var d = new Date(y, m, day);
+      var key = isoDate(d);
+      var s = state.schedule[key] || {};
+      var row = document.createElement('div'); row.className = 'dayrow' + (s.dayOff ? ' off' : '');
+      row.innerHTML = '<span class="dlabel">'+(m+1)+'/'+day+'('+DOWLABEL[d.getDay()]+')</span>'
+        + '<input type="time" data-key="'+key+'" data-f="出勤" value="'+(s['出勤']||'')+'">'
+        + '<input type="time" data-key="'+key+'" data-f="休憩入り" value="'+(s['休憩入り']||'')+'">'
+        + '<input type="time" data-key="'+key+'" data-f="休憩戻り" value="'+(s['休憩戻り']||'')+'">'
+        + '<input type="time" data-key="'+key+'" data-f="退勤" value="'+(s['退勤']||'')+'">'
+        + '<input type="checkbox" data-key="'+key+'" data-f="dayOff" '+(s.dayOff?'checked':'')+' title="休み">';
+      dayList.appendChild(row);
+    }
+    dayList.querySelectorAll('input').forEach(function(inp){
+      inp.addEventListener('change', function(){
+        var key = inp.getAttribute('data-key');
+        var f = inp.getAttribute('data-f');
+        if (!state.schedule[key]) state.schedule[key] = {};
+        state.schedule[key][f] = (f==='dayOff') ? inp.checked : inp.value;
+        saveState();
+        inp.closest('.dayrow').classList.toggle('off', !!state.schedule[key].dayOff);
+        render();
+      });
+    });
+  }
+
+  function renderMonthLabel(){
+    document.getElementById('monthLabel').textContent = (viewMonth.getFullYear())+'年 '+(viewMonth.getMonth()+1)+'月';
+  }
+
+  document.getElementById('openSched').addEventListener('click', function(){
+    viewMonth = new Date(); viewMonth.setDate(1);
+    renderMonthLabel(); buildTplRows(); buildDayList();
+    schedOverlay.classList.add('open');
+  });
+  document.getElementById('closeSched').addEventListener('click', function(){ schedOverlay.classList.remove('open'); render(); });
+  document.getElementById('prevMonth').addEventListener('click', function(){
+    viewMonth.setMonth(viewMonth.getMonth()-1); renderMonthLabel(); buildDayList();
+  });
+  document.getElementById('nextMonth').addEventListener('click', function(){
+    viewMonth.setMonth(viewMonth.getMonth()+1); renderMonthLabel(); buildDayList();
+  });
+  document.getElementById('applyTpl').addEventListener('click', function(){
+    var y = viewMonth.getFullYear(), m = viewMonth.getMonth();
+    var last = new Date(y, m+1, 0).getDate();
+    for (var day=1; day<=last; day++){
+      var d = new Date(y, m, day);
+      var key = isoDate(d);
+      var t = state.weeklyTemplate[d.getDay()];
+      if (!t) continue;
+      state.schedule[key] = {
+        '出勤': t['出勤']||'', '休憩入り': t['休憩入り']||'', '休憩戻り': t['休憩戻り']||'', '退勤': t['退勤']||'', dayOff: !!t.dayOff
+      };
+    }
+    saveState(); buildDayList(); render();
+    showToast('今月に一括適用しました');
+  });
+
+  // ---- backup / restore ----
+  async function doBackup(){
+    var text = JSON.stringify(state);
+    try {
+      if (window.claude && window.claude.use) {
+        var dl = await window.claude.use('downloads');
+        if (dl) {
+          var d = new Date();
+          var fname = 'myworktime-backup-' + d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate()) + '.json';
+          var res = await dl.save({ filename: fname, data: text });
+          if (res) { showToast('バックアップを保存しました'); return; }
+        }
+      }
+    } catch(e){}
+    try { await navigator.clipboard.writeText(text); showToast('コピーしました。安全な場所に保存してください'); }
+    catch(e){ window.prompt('この内容をコピーして保存してください', text); }
+  }
+  document.getElementById('backupBtn').addEventListener('click', doBackup);
+
+  document.getElementById('restoreBtn').addEventListener('click', function(){
+    document.getElementById('restoreFile').click();
+  });
+  document.getElementById('restoreFile').addEventListener('change', function(ev){
+    var f = ev.target.files[0]; if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try {
+        var obj = JSON.parse(reader.result);
+        state.cycleStartDay = obj.cycleStartDay || state.cycleStartDay;
+        state.name = (obj.name != null) ? obj.name : state.name;
+        state.warnMin = obj.warnMin || state.warnMin;
+        state.dangerMin = obj.dangerMin || state.dangerMin;
+        state.regularHours = (obj.regularHours != null) ? obj.regularHours : state.regularHours;
+        state.adjustHours = (obj.adjustHours != null) ? obj.adjustHours : state.adjustHours;
+        state.schedule = obj.schedule || state.schedule;
+        state.weeklyTemplate = obj.weeklyTemplate || state.weeklyTemplate;
+        state.entries = obj.entries || state.entries;
+        saveState(); render();
+        showToast('復元しました');
+      } catch(e) { showToast('復元に失敗しました。ファイルを確認してください'); }
+      ev.target.value = '';
+    };
+    reader.readAsText(f);
+  });
+
+  loadState();
+  render();
+})();
+</script>
+</body>
+</html>
