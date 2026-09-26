@@ -87,6 +87,9 @@
   .field{margin-bottom:11px;} .field label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:4px;}
   .typegrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
   .typegrid button{padding:10px 6px;border-radius:12px;border:1px solid var(--line);background:var(--surface-alt);color:var(--ink);font-size:13px;cursor:pointer;}
+  .typegrid button.b2{border-style:dashed;}
+  .typegrid button.hide{display:none;}
+  .b2in{grid-column:3;} .b2out{grid-column:4;} .b2lbl{grid-column:2;font-size:10px;color:var(--ink-soft);text-align:right;}
   .typegrid button.sel{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
   input[type="time"],input[type="text"],input[type="number"],select{width:100%;padding:10px 10px;border-radius:12px;border:1px solid var(--line);background:var(--surface-alt);color:var(--ink);font-size:14.5px;font-family:inherit;}
   .schedpreview{background:var(--surface-alt);border-radius:12px;padding:10px 12px;font-size:13.5px;margin-bottom:11px;}
@@ -158,6 +161,7 @@
     <div class="typegrid" id="typeGrid">
       <button data-t="出勤">出勤</button><button data-t="休憩入り">休憩入り</button>
       <button data-t="休憩戻り">休憩戻り</button><button data-t="退勤">退勤</button>
+      <button data-t="休憩2入り" class="b2">休憩2入り</button><button data-t="休憩2戻り" class="b2">休憩2戻り</button>
     </div>
   </div>
   <div class="schedpreview"><span class="lbl">今日の予定：</span><span id="schedPreviewVal">-</span></div>
@@ -176,6 +180,7 @@
   <div class="settingrow"><span>調整管理枠（月・h）</span><input type="number" id="adjustInput" step="0.5"></div>
   <div class="settingrow"><span>注意ライン（分）</span><input type="number" id="warnInput" min="1"></div>
   <div class="settingrow"><span>要対応ライン（分）</span><input type="number" id="dangerInput" min="1"></div>
+  <div class="settingrow"><span>休憩2回を使う（フロント用）</span><input type="checkbox" id="break2Chk" style="width:22px;height:22px;"></div>
   <div class="settingrow"><span>データをバックアップ</span><button class="miniAction" id="backupBtn">保存する</button></div>
   <div class="settingrow"><span>バックアップから復元</span><button class="miniAction" id="restoreBtn">ファイルを選ぶ</button><input type="file" id="restoreFile" accept="application/json" style="display:none;"></div>
   <div class="hint">データはこの端末の中だけに保存されます。サーバーには送信されません。バックアップも同様に、この端末上でファイルとして保存されるだけです。</div>
@@ -205,11 +210,14 @@
 <script>
 (function(){
   var STORE_KEY = 'my_worktime_v1';
-  var TYPES = ['出勤','休憩入り','休憩戻り','退勤'];
+  var TYPES_BASE = ['出勤','休憩入り','休憩戻り','退勤'];
+  var TYPES_B2 = ['出勤','休憩入り','休憩戻り','休憩2入り','休憩2戻り','退勤'];
+  var TYPES = TYPES_BASE;
+  function applyB2(){ TYPES = state.useBreak2 ? TYPES_B2 : TYPES_BASE; }
   var DOWLABEL = ['日','月','火','水','木','金','土'];
   var state = {
     cycleStartDay: 21, name: '', warnMin: 15, dangerMin: 30,
-    regularHours: 177, adjustHours: 20,
+    regularHours: 177, adjustHours: 20, useBreak2: false,
     schedule: {}, weeklyTemplate: {}, entries: {}
   };
 
@@ -228,6 +236,7 @@
           state.schedule = p.schedule || {};
           state.weeklyTemplate = p.weeklyTemplate || {};
           state.entries = p.entries || {};
+          state.useBreak2 = !!p.useBreak2;
         }
       }
     } catch(e){}
@@ -257,7 +266,7 @@
     if (!sched || !actual) return 0;
     var s=sched.split(':').map(Number), a=actual.split(':').map(Number);
     var sMin=s[0]*60+s[1], aMin=a[0]*60+a[1];
-    if (type==='出勤' || type==='休憩戻り') return sMin-aMin;
+    if (type==='出勤' || type==='休憩戻り' || type==='休憩2戻り') return sMin-aMin;
     return aMin-sMin;
   }
   function levelOf(mins){
@@ -279,9 +288,15 @@
   function daySchedMinutes(dateKey){
     var d = state.schedule[dateKey];
     if (!d || d.dayOff) return 0;
+    return segTotal(d);
+  }
+  function segsOf(m){
+    if (m['休憩2入り']) return [['出勤','休憩入り'],['休憩戻り','休憩2入り'],['休憩2戻り','退勤']];
+    return [['出勤','休憩入り'],['休憩戻り','退勤']];
+  }
+  function segTotal(m){
     var total = 0;
-    if (d['出勤'] && d['休憩入り']) total += diffMin(d['出勤'], d['休憩入り']);
-    if (d['休憩戻り'] && d['退勤']) total += diffMin(d['休憩戻り'], d['退勤']);
+    segsOf(m).forEach(function(sg){ if (m[sg[0]] && m[sg[1]]) total += diffMin(m[sg[0]], m[sg[1]]); });
     return total;
   }
   function diffMin(t1, t2){
@@ -293,10 +308,7 @@
     if (!list) return 0;
     var byType = {};
     list.forEach(function(e){ byType[e.type] = e.actual; });
-    var total = 0;
-    if (byType['出勤'] && byType['休憩入り']) total += diffMin(byType['出勤'], byType['休憩入り']);
-    if (byType['休憩戻り'] && byType['退勤']) total += diffMin(byType['休憩戻り'], byType['退勤']);
-    return total;
+    return segTotal(byType);
   }
 
   function todayRemainingSched(dateKey){
@@ -306,10 +318,10 @@
     var byType = {};
     list.forEach(function(e){ byType[e.type] = e.actual; });
     var total = 0;
-    var haveMorningActual = byType['出勤'] && byType['休憩入り'];
-    if (!haveMorningActual && d['出勤'] && d['休憩入り']) total += diffMin(d['出勤'], d['休憩入り']);
-    var haveAfternoonActual = byType['休憩戻り'] && byType['退勤'];
-    if (!haveAfternoonActual && d['休憩戻り'] && d['退勤']) total += diffMin(d['休憩戻り'], d['退勤']);
+    segsOf(d).forEach(function(sg){
+      var done = byType[sg[0]] && byType[sg[1]];
+      if (!done && d[sg[0]] && d[sg[1]]) total += diffMin(d[sg[0]], d[sg[1]]);
+    });
     return total;
   }
 
@@ -351,6 +363,8 @@
   var expandedHistoryDay = null;
 
   function render(){
+    applyB2();
+    Array.prototype.forEach.call(document.querySelectorAll('#typeGrid .b2'), function(b){ b.classList.toggle('hide', !state.useBreak2); });
     var today = new Date();
     var todayKey = isoDate(today);
     var st = cycleStats();
@@ -395,7 +409,7 @@
       if (!any) {
         ts.innerHTML = '<b>今日のシフト予定が未登録です。</b>「🗓 シフト予定を登録」から入れてください。';
       } else {
-        var rows = TYPES.map(function(t){ return '<div class="row"><span>'+t+'</span><span>'+(getSchedFor(todayKey,t)||'—')+'</span></div>'; }).join('');
+        var rows = TYPES.filter(function(t){ return t.indexOf('休憩2')===-1 || getSchedFor(todayKey,t); }).map(function(t){ return '<div class="row"><span>'+t+'</span><span>'+(getSchedFor(todayKey,t)||'—')+'</span></div>'; }).join('');
         ts.innerHTML = '<b>今日の予定</b>' + rows;
       }
     }
@@ -513,6 +527,7 @@
     nameInput.value = state.name; cycleStartSel.value = state.cycleStartDay;
     regularInput.value = state.regularHours; adjustInput.value = state.adjustHours;
     warnInput.value = state.warnMin; dangerInput.value = state.dangerMin;
+    document.getElementById('break2Chk').checked = !!state.useBreak2;
     settingsOverlay.classList.add('open');
   });
   document.getElementById('closeSettings').addEventListener('click', function(){ settingsOverlay.classList.remove('open'); });
@@ -522,6 +537,8 @@
   adjustInput.addEventListener('change', function(){ state.adjustHours = parseFloat(adjustInput.value)||0; saveState(); render(); });
   warnInput.addEventListener('change', function(){ var v=parseInt(warnInput.value,10); if(v>0){state.warnMin=v; saveState(); render();} });
   dangerInput.addEventListener('change', function(){ var v=parseInt(dangerInput.value,10); if(v>0){state.dangerMin=v; saveState(); render();} });
+
+  document.getElementById('break2Chk').addEventListener('change', function(ev){ state.useBreak2 = ev.target.checked; saveState(); render(); });
 
   // ---- toast ----
   var toastEl = document.getElementById('toast'); var toastTimer=null;
@@ -570,7 +587,8 @@
         + '<input type="time" data-dow="'+dow+'" data-f="休憩戻り" value="'+(t['休憩戻り']||'')+'">'
         + '<input type="time" data-dow="'+dow+'" data-f="退勤" value="'+(t['退勤']||'')+'">'
         + '<input type="checkbox" data-dow="'+dow+'" data-f="dayOff" '+(t.dayOff?'checked':'')+' title="休み">'
-        + '<button type="button" class="clearRowBtn" data-cleardow="'+dow+'" title="この曜日をクリア">✕</button>';
+        + '<button type="button" class="clearRowBtn" data-cleardow="'+dow+'" title="この曜日をクリア">✕</button>'
+        + (state.useBreak2 ? '<span class="b2lbl">休憩2</span><input class="b2in" type="time" data-dow="'+dow+'" data-f="休憩2入り" value="'+(t['休憩2入り']||'')+'"><input class="b2out" type="time" data-dow="'+dow+'" data-f="休憩2戻り" value="'+(t['休憩2戻り']||'')+'">' : '');
       tplRows.appendChild(row);
     }
     tplRows.querySelectorAll('.clearRowBtn').forEach(function(btn){
@@ -607,7 +625,8 @@
         + '<input type="time" data-key="'+key+'" data-f="休憩戻り" value="'+(s['休憩戻り']||'')+'">'
         + '<input type="time" data-key="'+key+'" data-f="退勤" value="'+(s['退勤']||'')+'">'
         + '<input type="checkbox" data-key="'+key+'" data-f="dayOff" '+(s.dayOff?'checked':'')+' title="休み">'
-        + '<button type="button" class="clearRowBtn" data-clearkey="'+key+'" title="この日をクリア">✕</button>';
+        + '<button type="button" class="clearRowBtn" data-clearkey="'+key+'" title="この日をクリア">✕</button>'
+        + (state.useBreak2 ? '<span class="b2lbl">休憩2</span><input class="b2in" type="time" data-key="'+key+'" data-f="休憩2入り" value="'+(s['休憩2入り']||'')+'"><input class="b2out" type="time" data-key="'+key+'" data-f="休憩2戻り" value="'+(s['休憩2戻り']||'')+'">' : '');
       dayList.appendChild(row);
     }
     dayList.querySelectorAll('.clearRowBtn').forEach(function(btn){
@@ -657,7 +676,7 @@
       var t = state.weeklyTemplate[d.getDay()];
       if (!t) continue;
       state.schedule[key] = {
-        '出勤': t['出勤']||'', '休憩入り': t['休憩入り']||'', '休憩戻り': t['休憩戻り']||'', '退勤': t['退勤']||'', dayOff: !!t.dayOff
+        '出勤': t['出勤']||'', '休憩入り': t['休憩入り']||'', '休憩戻り': t['休憩戻り']||'', '退勤': t['退勤']||'', '休憩2入り': t['休憩2入り']||'', '休憩2戻り': t['休憩2戻り']||'', dayOff: !!t.dayOff
       };
     }
     saveState(); buildDayList(); render();
@@ -719,6 +738,7 @@
         state.schedule = obj.schedule || state.schedule;
         state.weeklyTemplate = obj.weeklyTemplate || state.weeklyTemplate;
         state.entries = obj.entries || state.entries;
+        state.useBreak2 = !!obj.useBreak2;
         saveState(); render();
         showToast('復元しました');
       } catch(e) { showToast('復元に失敗しました。ファイルを確認してください'); }
