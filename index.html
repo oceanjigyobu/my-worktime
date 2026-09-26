@@ -348,6 +348,8 @@
     return count;
   }
 
+  var expandedHistoryDay = null;
+
   function render(){
     var today = new Date();
     var todayKey = isoDate(today);
@@ -421,10 +423,17 @@
       keys.forEach(function(k){
         var entries = state.entries[k];
         var tot = entries.reduce(function(s,e){return s+e.delta;},0);
-        var head = document.createElement('div'); head.className='dayhead';
+        var head = document.createElement('div'); head.className='dayhead'; head.style.cursor='pointer';
         var d2 = new Date(k+'T00:00:00');
-        head.innerHTML = '<span>'+fmtMD(d2)+'</span><span class="dtot '+levelOf(tot)+'">'+(tot>0?'+':'')+Math.round(tot)+'分</span>';
+        head.innerHTML = '<span>'+fmtMD(d2)+' '+(expandedHistoryDay===k?'▲':'▼')+'</span><span class="dtot '+levelOf(tot)+'">'+(tot>0?'+':'')+Math.round(tot)+'分</span>';
+        head.addEventListener('click', function(){
+          expandedHistoryDay = (expandedHistoryDay===k) ? null : k;
+          render();
+        });
         histList.appendChild(head);
+        if (expandedHistoryDay===k) {
+          entries.forEach(function(e, idx){ histList.appendChild(entryRow(e, k, idx)); });
+        }
       });
     }
   }
