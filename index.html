@@ -192,7 +192,7 @@
   <div class="hint" style="margin-top:0;">曜日ごとのパターンを決めて「今月に一括適用」を押すと、下の日別リストに反映されます。個別の日はあとから修正できます。</div>
   <div id="tplRows"></div>
   <div class="row2" style="margin:0 0 14px;">
-    <button class="applybtn" id="applyTpl" style="margin:0;">今月に一括適用</button>
+    <button class="reportbtn" id="applyTpl" style="margin:0;">今月に一括適用</button>
     <button class="reportbtn" id="clearTpl" style="margin:0;">曜日パターンをクリア</button>
   </div>
   <div class="hint" style="margin-bottom:2px;">日別リスト（休みなら「休」にチェック）</div>
@@ -656,9 +656,17 @@
   });
   document.getElementById('clearTpl').addEventListener('click', function(){
     state.weeklyTemplate = {};
+    var y = viewMonth.getFullYear(), m = viewMonth.getMonth();
+    var last = new Date(y, m+1, 0).getDate();
+    for (var day=1; day<=last; day++){
+      var key = isoDate(new Date(y, m, day));
+      delete state.schedule[key];
+    }
     saveState();
     buildTplRows();
-    showToast('曜日パターンをクリアしました');
+    buildDayList();
+    render();
+    showToast('曜日パターンと今月の登録をクリアしました');
   });
 
   // ---- backup / restore ----
