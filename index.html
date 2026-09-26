@@ -104,13 +104,14 @@
   .monthnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
   .monthnav button{background:var(--surface-alt);border:none;border-radius:10px;width:34px;height:34px;font-size:16px;color:var(--ink);cursor:pointer;}
   .monthnav .mlabel{font-family:"Zen Maru Gothic",sans-serif;font-weight:700;font-size:15px;}
-  .tplrow{display:grid;grid-template-columns:34px 1fr 1fr 1fr 1fr 30px;gap:5px;align-items:center;padding:5px 0;font-size:11px;}
-  .tplrow input[type="time"]{padding:6px 4px;font-size:11px;}
+  .tplrow{display:grid;grid-template-columns:32px 1fr 1fr 1fr 1fr 26px 24px;gap:4px;align-items:center;padding:5px 0;font-size:11px;}
+  .tplrow input[type="time"]{padding:6px 3px;font-size:11px;}
   .applybtn{width:100%;margin:8px 0 14px;padding:11px;border-radius:12px;border:none;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:13px;cursor:pointer;}
   .daylist{max-height:260px;overflow-y:auto;border-top:1px solid var(--line);margin-top:6px;}
-  .dayrow{display:grid;grid-template-columns:52px 1fr 1fr 1fr 1fr 26px;gap:5px;align-items:center;padding:6px 2px;border-bottom:1px solid var(--line);font-size:10.5px;}
+  .dayrow{display:grid;grid-template-columns:50px 1fr 1fr 1fr 1fr 24px 22px;gap:4px;align-items:center;padding:6px 2px;border-bottom:1px solid var(--line);font-size:10.5px;}
   .dayrow.off{opacity:.45;}
   .dayrow input[type="time"]{padding:5px 3px;font-size:10.5px;}
+  .clearRowBtn{background:none;border:none;color:var(--danger);font-size:15px;cursor:pointer;padding:2px;line-height:1;}
   .dayrow .dlabel{font-size:11px;font-weight:500;}
   .dayrow input[type="checkbox"]{width:16px;height:16px;}
   .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(12px);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:80;white-space:nowrap;max-width:88vw;overflow:hidden;text-overflow:ellipsis;}
@@ -190,7 +191,10 @@
   </div>
   <div class="hint" style="margin-top:0;">曜日ごとのパターンを決めて「今月に一括適用」を押すと、下の日別リストに反映されます。個別の日はあとから修正できます。</div>
   <div id="tplRows"></div>
-  <button class="applybtn" id="applyTpl">今月に一括適用</button>
+  <div class="row2" style="margin:0 0 14px;">
+    <button class="applybtn" id="applyTpl" style="margin:0;">今月に一括適用</button>
+    <button class="reportbtn" id="clearTpl" style="margin:0;">曜日パターンをクリア</button>
+  </div>
   <div class="hint" style="margin-bottom:2px;">日別リスト（休みなら「休」にチェック）</div>
   <div class="daylist" id="dayList"></div>
   <div class="sheetbtns"><button class="cancel" id="closeSched">閉じる</button></div>
@@ -556,9 +560,18 @@
         + '<input type="time" data-dow="'+dow+'" data-f="休憩入り" value="'+(t['休憩入り']||'')+'">'
         + '<input type="time" data-dow="'+dow+'" data-f="休憩戻り" value="'+(t['休憩戻り']||'')+'">'
         + '<input type="time" data-dow="'+dow+'" data-f="退勤" value="'+(t['退勤']||'')+'">'
-        + '<input type="checkbox" data-dow="'+dow+'" data-f="dayOff" '+(t.dayOff?'checked':'')+' title="休み">';
+        + '<input type="checkbox" data-dow="'+dow+'" data-f="dayOff" '+(t.dayOff?'checked':'')+' title="休み">'
+        + '<button type="button" class="clearRowBtn" data-cleardow="'+dow+'" title="この曜日をクリア">✕</button>';
       tplRows.appendChild(row);
     }
+    tplRows.querySelectorAll('.clearRowBtn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var dow = parseInt(btn.getAttribute('data-cleardow'),10);
+        delete state.weeklyTemplate[dow];
+        saveState();
+        buildTplRows();
+      });
+    });
     tplRows.querySelectorAll('input').forEach(function(inp){
       inp.addEventListener('change', function(){
         var dow = parseInt(inp.getAttribute('data-dow'),10);
@@ -584,9 +597,19 @@
         + '<input type="time" data-key="'+key+'" data-f="休憩入り" value="'+(s['休憩入り']||'')+'">'
         + '<input type="time" data-key="'+key+'" data-f="休憩戻り" value="'+(s['休憩戻り']||'')+'">'
         + '<input type="time" data-key="'+key+'" data-f="退勤" value="'+(s['退勤']||'')+'">'
-        + '<input type="checkbox" data-key="'+key+'" data-f="dayOff" '+(s.dayOff?'checked':'')+' title="休み">';
+        + '<input type="checkbox" data-key="'+key+'" data-f="dayOff" '+(s.dayOff?'checked':'')+' title="休み">'
+        + '<button type="button" class="clearRowBtn" data-clearkey="'+key+'" title="この日をクリア">✕</button>';
       dayList.appendChild(row);
     }
+    dayList.querySelectorAll('.clearRowBtn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var key = btn.getAttribute('data-clearkey');
+        delete state.schedule[key];
+        saveState();
+        buildDayList();
+        render();
+      });
+    });
     dayList.querySelectorAll('input').forEach(function(inp){
       inp.addEventListener('change', function(){
         var key = inp.getAttribute('data-key');
@@ -630,6 +653,12 @@
     }
     saveState(); buildDayList(); render();
     showToast('今月に一括適用しました');
+  });
+  document.getElementById('clearTpl').addEventListener('click', function(){
+    state.weeklyTemplate = {};
+    saveState();
+    buildTplRows();
+    showToast('曜日パターンをクリアしました');
   });
 
   // ---- backup / restore ----
