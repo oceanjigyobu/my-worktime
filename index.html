@@ -295,8 +295,12 @@
     return [['出勤','休憩入り'],['休憩戻り','退勤']];
   }
   function segTotal(m){
-    var total = 0;
-    segsOf(m).forEach(function(sg){ if (m[sg[0]] && m[sg[1]]) total += diffMin(m[sg[0]], m[sg[1]]); });
+    // 出勤〜退勤の全体から、記録されている休憩分だけを差し引く方式。
+    // 休憩を取らない（6時間未満の）勤務でも、出勤・退勤さえあれば正しく計算される。
+    if (!m['出勤'] || !m['退勤']) return 0;
+    var total = diffMin(m['出勤'], m['退勤']);
+    if (m['休憩入り'] && m['休憩戻り']) total -= diffMin(m['休憩入り'], m['休憩戻り']);
+    if (m['休憩2入り'] && m['休憩2戻り']) total -= diffMin(m['休憩2入り'], m['休憩2戻り']);
     return total;
   }
   function diffMin(t1, t2){
