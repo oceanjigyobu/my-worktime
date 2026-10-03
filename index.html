@@ -266,8 +266,12 @@
     if (!sched || !actual) return 0;
     var s=sched.split(':').map(Number), a=actual.split(':').map(Number);
     var sMin=s[0]*60+s[1], aMin=a[0]*60+a[1];
-    if (type==='出勤' || type==='休憩戻り' || type==='休憩2戻り') return sMin-aMin;
-    return aMin-sMin;
+    var raw = (type==='出勤' || type==='休憩戻り' || type==='休憩2戻り') ? (sMin-aMin) : (aMin-sMin);
+    // 予定・実際の時刻が深夜0時をまたいでズレて見える場合（例：予定23:58、実際0:03）、
+    // 12時間以上のズレは「日をまたいだだけ」とみなし、実際のズレ幅に補正する。
+    if (raw > 720) raw -= 1440;
+    if (raw < -720) raw += 1440;
+    return raw;
   }
   function levelOf(mins){
     var a=Math.abs(mins);
@@ -305,7 +309,24 @@
   }
   function diffMin(t1, t2){
     var a=t1.split(':').map(Number), b=t2.split(':').map(Number);
-    return (b[0]*60+b[1]) - (a[0]*60+a[1]);
+    var aMin = a[0]*60+a[1], bMin = b[0]*60+b[1];
+    if (bMin < aMin) bMin += 1440; // 日付をまたぐ場合（例：22:00→翌02:00）
+    return bMin - aMin;
+  }
+  var END_TYPES = ['退勤','休憩戻り','休憩2戻り'];
+  function effectiveDateKeyFor(type){
+    // 深夜0時をまたいで打刻する場合、前日の「出勤」がまだ「退勤」していなければ、
+    // その続きの打刻として前日の記録に入れる。
+    var todayKey = isoDate(new Date());
+    if (END_TYPES.indexOf(type) === -1) return todayKey;
+    var y = new Date(); y.setDate(y.getDate()-1);
+    var yKey = isoDate(y);
+    var yTypes = (state.entries[yKey]||[]).map(function(e){ return e.type; });
+    var yOpen = yTypes.indexOf('出勤')!==-1 && yTypes.indexOf('退勤')===-1;
+    var todayTypes = (state.entries[todayKey]||[]).map(function(e){ return e.type; });
+    var todayStarted = todayTypes.indexOf('出勤')!==-1;
+    if (yOpen && !todayStarted) return yKey;
+    return todayKey;
   }
   function dayWorkedMinutes(dateKey){
     var list = state.entries[dateKey];
@@ -478,6 +499,13 @@
   var typeGrid = document.getElementById('typeGrid');
   var selectedType = '出勤';
   function suggestType(){
+    // 前日から続く夜勤（出勤はあるが退勤がまだ）があれば、まずそれを閉じる打刻を優先提案
+    var y = new Date(); y.setDate(y.getDate()-1);
+    var yKey = isoDate(y);
+    var yTypes = (state.entries[yKey]||[]).map(function(e){ return e.type; });
+    if (yTypes.indexOf('出勤')!==-1 && yTypes.indexOf('退勤')===-1) {
+      for (var j=0;j<TYPES.length;j++){ if (yTypes.indexOf(TYPES[j])===-1) return TYPES[j]; }
+    }
     var todayKey = isoDate(new Date());
     var done = (state.entries[todayKey]||[]).map(function(e){return e.type;});
     for (var i=0;i<TYPES.length;i++){ if (done.indexOf(TYPES[i])===-1) return TYPES[i]; }
@@ -486,8 +514,8 @@
   function setTypeUI(t){
     selectedType = t;
     Array.prototype.forEach.call(typeGrid.children, function(b){ b.classList.toggle('sel', b.getAttribute('data-t')===t); });
-    var todayKey = isoDate(new Date());
-    var s = getSchedFor(todayKey, t);
+    var key = effectiveDateKeyFor(t);
+    var s = getSchedFor(key, t);
     document.getElementById('schedPreviewVal').textContent = s || '未登録（設定から登録してください）';
   }
   typeGrid.addEventListener('click', function(ev){
@@ -508,7 +536,7 @@
   document.getElementById('saveAdd').addEventListener('click', function(){
     var actual = document.getElementById('actualTime').value;
     if (!actual) return;
-    var todayKey = isoDate(new Date());
+    var todayKey = effectiveDateKeyFor(selectedType);
     var sched = getSchedFor(todayKey, selectedType);
     if (!state.entries[todayKey]) state.entries[todayKey] = [];
     var delta = sched ? minutesDiff(selectedType, sched, actual) : 0;
