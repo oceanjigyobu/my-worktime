@@ -194,10 +194,15 @@
     <div class="mlabel" id="monthLabel">-</div>
     <button id="nextMonth">＞</button>
   </div>
-  <div class="hint" style="margin-top:0;">曜日ごとのパターンを決めて「今月に一括適用」を押すと、下の日別リストに反映されます。個別の日はあとから修正できます。</div>
+  <div class="hint" style="margin-top:0;">曜日ごとのパターンを決めて、下の「適用対象の週」を選び、「この週に適用」を押すと、その7日間だけ反映されます。次の週は違うパターンにしたい場合、曜日パターンをクリアしてから入力し直し、週を1つ進めてまた適用してください。</div>
   <div id="tplRows"></div>
+  <div class="monthnav" style="margin-top:6px;">
+    <button id="prevWeek">＜</button>
+    <div class="mlabel" id="weekLabel" style="font-size:13px;">-</div>
+    <button id="nextWeek">＞</button>
+  </div>
   <div class="row2" style="margin:0 0 14px;">
-    <button class="reportbtn" id="applyTpl" style="margin:0;">今月に一括適用</button>
+    <button class="reportbtn" id="applyTpl" style="margin:0;">この週に適用</button>
     <button class="reportbtn" id="clearTpl" style="margin:0;">曜日パターンをクリア</button>
   </div>
   <div class="hint" style="margin-bottom:2px;">日別リスト（休みなら「休」にチェック）</div>
@@ -605,8 +610,16 @@
   // ---- schedule editor ----
   var schedOverlay = document.getElementById('schedOverlay');
   var viewMonth = new Date(); viewMonth.setDate(1);
+  var weekStart = new Date(viewMonth); // 「適用対象の週」の開始日（7日単位でずらす）
   var tplRows = document.getElementById('tplRows');
   var dayList = document.getElementById('dayList');
+
+  function renderWeekLabel(){
+    var end = new Date(weekStart); end.setDate(end.getDate()+6);
+    document.getElementById('weekLabel').textContent =
+      (weekStart.getMonth()+1)+'/'+weekStart.getDate()+'('+DOWLABEL[weekStart.getDay()]+')〜'+
+      (end.getMonth()+1)+'/'+end.getDate()+'('+DOWLABEL[end.getDay()]+')';
+  }
 
   function buildTplRows(){
     tplRows.innerHTML = '';
@@ -689,21 +702,30 @@
 
   document.getElementById('openSched').addEventListener('click', function(){
     viewMonth = new Date(); viewMonth.setDate(1);
-    renderMonthLabel(); buildTplRows(); buildDayList();
+    weekStart = new Date(viewMonth);
+    renderMonthLabel(); renderWeekLabel(); buildTplRows(); buildDayList();
     schedOverlay.classList.add('open');
   });
   document.getElementById('closeSched').addEventListener('click', function(){ schedOverlay.classList.remove('open'); render(); });
   document.getElementById('prevMonth').addEventListener('click', function(){
-    viewMonth.setMonth(viewMonth.getMonth()-1); renderMonthLabel(); buildDayList();
+    viewMonth.setMonth(viewMonth.getMonth()-1);
+    weekStart = new Date(viewMonth);
+    renderMonthLabel(); renderWeekLabel(); buildDayList();
   });
   document.getElementById('nextMonth').addEventListener('click', function(){
-    viewMonth.setMonth(viewMonth.getMonth()+1); renderMonthLabel(); buildDayList();
+    viewMonth.setMonth(viewMonth.getMonth()+1);
+    weekStart = new Date(viewMonth);
+    renderMonthLabel(); renderWeekLabel(); buildDayList();
+  });
+  document.getElementById('prevWeek').addEventListener('click', function(){
+    weekStart.setDate(weekStart.getDate()-7); renderWeekLabel();
+  });
+  document.getElementById('nextWeek').addEventListener('click', function(){
+    weekStart.setDate(weekStart.getDate()+7); renderWeekLabel();
   });
   document.getElementById('applyTpl').addEventListener('click', function(){
-    var y = viewMonth.getFullYear(), m = viewMonth.getMonth();
-    var last = new Date(y, m+1, 0).getDate();
-    for (var day=1; day<=last; day++){
-      var d = new Date(y, m, day);
+    for (var i=0; i<7; i++){
+      var d = new Date(weekStart); d.setDate(d.getDate()+i);
       var key = isoDate(d);
       var t = state.weeklyTemplate[d.getDay()];
       if (!t) continue;
@@ -712,21 +734,19 @@
       };
     }
     saveState(); buildDayList(); render();
-    showToast('今月に一括適用しました');
+    var endLbl = document.getElementById('weekLabel').textContent;
+    showToast('この週（'+endLbl+'）に適用しました');
+    // 次回はそのまま次の週へ進めておく（戻りたい時は＜で戻れる）
+    weekStart.setDate(weekStart.getDate()+7);
+    renderWeekLabel();
   });
   document.getElementById('clearTpl').addEventListener('click', function(){
+    // 曜日パターンの入力欄だけを空にする。すでに「一括適用」済みの日別リストには触れない
+    // （触れてしまうと、週ごとに違うパターンを順番に適用していく運用が壊れるため）。
     state.weeklyTemplate = {};
-    var y = viewMonth.getFullYear(), m = viewMonth.getMonth();
-    var last = new Date(y, m+1, 0).getDate();
-    for (var day=1; day<=last; day++){
-      var key = isoDate(new Date(y, m, day));
-      delete state.schedule[key];
-    }
     saveState();
     buildTplRows();
-    buildDayList();
-    render();
-    showToast('曜日パターンと今月の登録をクリアしました');
+    showToast('曜日パターンをクリアしました');
   });
 
   // ---- backup / restore ----
