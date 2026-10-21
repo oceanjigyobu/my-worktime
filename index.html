@@ -79,6 +79,7 @@
   .empty{padding:20px 14px;text-align:center;color:var(--ink-soft);font-size:13px;}
   .dayhead{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface-alt);font-size:12.5px;}
   .dayhead .dtot{font-weight:700;font-family:"Zen Maru Gothic",sans-serif;}
+  .dayhead .dtot.good{color:var(--good);} .dayhead .dtot.warn{color:var(--warn);} .dayhead .dtot.danger{color:var(--danger);}
 
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-end;justify-content:center;z-index:50;}
   .overlay.open{display:flex;}
@@ -178,8 +179,10 @@
   <div class="settingrow"><span>締め開始日</span><select id="cycleStartSel" style="width:90px;"></select></div>
   <div class="settingrow"><span>所定時間（月・h）</span><input type="number" id="regularInput" step="0.5"></div>
   <div class="settingrow"><span>調整管理枠（月・h）</span><input type="number" id="adjustInput" step="0.5"></div>
-  <div class="settingrow"><span>注意ライン（分）</span><input type="number" id="warnInput" min="1"></div>
-  <div class="settingrow"><span>要対応ライン（分）</span><input type="number" id="dangerInput" min="1"></div>
+  <div class="settingrow"><span>注意ライン：1回・1日（分）</span><input type="number" id="warnInput" min="1"></div>
+  <div class="settingrow"><span>要対応ライン：1回・1日（分）</span><input type="number" id="dangerInput" min="1"></div>
+  <div class="settingrow"><span>注意ライン：月の累計（分）</span><input type="number" id="cumWarnInput" min="1"></div>
+  <div class="settingrow"><span>要対応ライン：月の累計（分）</span><input type="number" id="cumDangerInput" min="1"></div>
   <div class="settingrow"><span>休憩2回を使う（フロント用）</span><input type="checkbox" id="break2Chk" style="width:22px;height:22px;"></div>
   <div class="settingrow"><span>データをバックアップ</span><button class="miniAction" id="backupBtn">保存する</button></div>
   <div class="settingrow"><span>バックアップから復元</span><button class="miniAction" id="restoreBtn">ファイルを選ぶ</button><input type="file" id="restoreFile" accept="application/json" style="display:none;"></div>
@@ -221,7 +224,7 @@
   function applyB2(){ TYPES = state.useBreak2 ? TYPES_B2 : TYPES_BASE; }
   var DOWLABEL = ['日','月','火','水','木','金','土'];
   var state = {
-    cycleStartDay: 21, name: '', warnMin: 15, dangerMin: 30,
+    cycleStartDay: 21, name: '', warnMin: 3, dangerMin: 5, cumWarnMin: 30, cumDangerMin: 60,
     regularHours: 177, adjustHours: 20, useBreak2: false,
     schedule: {}, weeklyTemplate: {}, entries: {}
   };
@@ -234,8 +237,10 @@
         if (p && typeof p === 'object') {
           state.cycleStartDay = p.cycleStartDay || 21;
           state.name = p.name || '';
-          state.warnMin = p.warnMin || 15;
-          state.dangerMin = p.dangerMin || 30;
+          state.warnMin = p.warnMin || 3;
+          state.dangerMin = p.dangerMin || 5;
+          state.cumWarnMin = p.cumWarnMin || 30;
+          state.cumDangerMin = p.cumDangerMin || 60;
           state.regularHours = (p.regularHours != null) ? p.regularHours : 177;
           state.adjustHours = (p.adjustHours != null) ? p.adjustHours : 20;
           state.schedule = p.schedule || {};
@@ -255,6 +260,12 @@
     var sign = mins < 0 ? '-' : '';
     var a = Math.abs(Math.round(mins));
     return sign + Math.floor(a/60) + 'h' + pad(a%60);
+  }
+
+  function gapText(diff){
+    var r = Math.round(diff);
+    if (r === 0) return 'ちょうど';
+    return (r>0 ? '+' : '-') + hm(Math.abs(r)) + (r>0 ? '（多い）' : '（少ない）');
   }
 
   function cycleRange(today){
@@ -282,6 +293,13 @@
     var a=Math.abs(mins);
     if (a>=state.dangerMin) return 'danger';
     if (a>=state.warnMin) return 'warn';
+    return 'good';
+  }
+
+  function levelOfCum(mins){
+    var a=Math.abs(mins);
+    if (a>=state.cumDangerMin) return 'danger';
+    if (a>=state.cumWarnMin) return 'warn';
     return 'good';
   }
 
@@ -398,7 +416,7 @@
     var today = new Date();
     var todayKey = isoDate(today);
     var st = cycleStats();
-    var lvl = levelOf(st.deltaTotal);
+    var lvl = levelOfCum(st.deltaTotal);
 
     var numEl = document.getElementById('cycleNum');
     numEl.textContent = (st.deltaTotal>0?'+':'') + Math.round(st.deltaTotal) + '分';
@@ -426,6 +444,12 @@
       var perShift = rwd > 0 ? Math.round(st.deltaTotal / rwd) : null;
       var msg = '<b>締め'+daysUntilEnd+'日前です</b>現在の差：'+(st.deltaTotal>0?'+':'')+Math.round(st.deltaTotal)+'分／残り勤務日数：'+rwd+'日'
         + (perShift!==null && perShift!==0 ? '／1勤務あたり'+(perShift>0?'-':'+')+Math.abs(perShift)+'分を目安に調整' : '');
+      var gap = st.forecast - st.baselineMin;
+      msg += '<br>月末見込み：'+hm(st.forecast)+'／基準('+hm(st.baselineMin)+')との差：'+gapText(gap);
+      if (rwd > 0 && Math.round(gap) !== 0) {
+        var perBase = Math.round(Math.abs(gap) / rwd);
+        msg += '／基準に近づけるには1勤務あたり'+(gap>0?'-':'+')+perBase+'分';
+      }
       if (daysUntilEnd <= 5) { b5.innerHTML = msg; b5.style.display = 'block'; }
       else { b10.innerHTML = msg; b10.style.display = 'block'; }
     }
@@ -451,6 +475,10 @@
       todayList.innerHTML = '<div class="empty">まだ記録がありません。</div>';
     } else {
       todayList.innerHTML = '';
+      var todayTot = todayEntries.reduce(function(s,e){return s+e.delta;},0);
+      var todayHead = document.createElement('div'); todayHead.className='dayhead';
+      todayHead.innerHTML = '<span>今日の合計</span><span class="dtot '+levelOf(todayTot)+'">'+(todayTot>0?'+':'')+Math.round(todayTot)+'分</span>';
+      todayList.appendChild(todayHead);
       todayEntries.forEach(function(e, idx){ todayList.appendChild(entryRow(e, todayKey, idx)); });
     }
 
@@ -560,10 +588,13 @@
   var adjustInput = document.getElementById('adjustInput');
   var warnInput = document.getElementById('warnInput');
   var dangerInput = document.getElementById('dangerInput');
+  var cumWarnInput = document.getElementById('cumWarnInput');
+  var cumDangerInput = document.getElementById('cumDangerInput');
   document.getElementById('gearBtn').addEventListener('click', function(){
     nameInput.value = state.name; cycleStartSel.value = state.cycleStartDay;
     regularInput.value = state.regularHours; adjustInput.value = state.adjustHours;
     warnInput.value = state.warnMin; dangerInput.value = state.dangerMin;
+    cumWarnInput.value = state.cumWarnMin; cumDangerInput.value = state.cumDangerMin;
     document.getElementById('break2Chk').checked = !!state.useBreak2;
     settingsOverlay.classList.add('open');
   });
@@ -574,6 +605,8 @@
   adjustInput.addEventListener('change', function(){ state.adjustHours = parseFloat(adjustInput.value)||0; saveState(); render(); });
   warnInput.addEventListener('change', function(){ var v=parseInt(warnInput.value,10); if(v>0){state.warnMin=v; saveState(); render();} });
   dangerInput.addEventListener('change', function(){ var v=parseInt(dangerInput.value,10); if(v>0){state.dangerMin=v; saveState(); render();} });
+  cumWarnInput.addEventListener('change', function(){ var v=parseInt(cumWarnInput.value,10); if(v>0){state.cumWarnMin=v; saveState(); render();} });
+  cumDangerInput.addEventListener('change', function(){ var v=parseInt(cumDangerInput.value,10); if(v>0){state.cumDangerMin=v; saveState(); render();} });
 
   document.getElementById('break2Chk').addEventListener('change', function(ev){ state.useBreak2 = ev.target.checked; saveState(); render(); });
 
@@ -598,7 +631,9 @@
     var text = '【My Work Time 報告】\n氏名：'+state.name+'\n期間：'+range
       +'\n累計差：'+(st.deltaTotal>0?'+':'')+Math.round(st.deltaTotal)+'分'
       +'\n現在実績：'+hm(st.actualMinutes)
-      +'\n基準まで：'+(st.remain>=0?('あと'+hm(st.remain)):('超過'+hm(Math.abs(st.remain))));
+      +'\n基準まで：'+(st.remain>=0?('あと'+hm(st.remain)):('超過'+hm(Math.abs(st.remain))))
+      +'\n月末見込み：'+hm(st.forecast)
+      +'\n基準('+hm(st.baselineMin)+')との差：'+gapText(st.forecast - st.baselineMin);
     if (navigator.share) {
       navigator.share({ text:text }).catch(function(){});
     } else {
@@ -784,6 +819,8 @@
         state.cycleStartDay = obj.cycleStartDay || state.cycleStartDay;
         state.name = (obj.name != null) ? obj.name : state.name;
         state.warnMin = obj.warnMin || state.warnMin;
+        state.cumWarnMin = obj.cumWarnMin || state.cumWarnMin;
+        state.cumDangerMin = obj.cumDangerMin || state.cumDangerMin;
         state.dangerMin = obj.dangerMin || state.dangerMin;
         state.regularHours = (obj.regularHours != null) ? obj.regularHours : state.regularHours;
         state.adjustHours = (obj.adjustHours != null) ? obj.adjustHours : state.adjustHours;
