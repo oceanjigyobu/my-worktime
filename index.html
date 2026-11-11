@@ -92,7 +92,7 @@
   .typegrid button.hide{display:none;}
   .b2in{grid-column:3;} .b2out{grid-column:4;} .b2lbl{grid-column:2;font-size:10px;color:var(--ink-soft);text-align:right;}
   .typegrid button.sel{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
-  input[type="time"],input[type="text"],input[type="number"],select{width:100%;padding:10px 10px;border-radius:12px;border:1px solid var(--line);background:var(--surface-alt);color:var(--ink);font-size:14.5px;font-family:inherit;}
+  input[type="time"],input[type="date"],input[type="text"],input[type="number"],select{width:100%;padding:10px 10px;border-radius:12px;border:1px solid var(--line);background:var(--surface-alt);color:var(--ink);font-size:14.5px;font-family:inherit;}
   .schedpreview{background:var(--surface-alt);border-radius:12px;padding:10px 12px;font-size:13.5px;margin-bottom:11px;}
   .schedpreview .lbl{color:var(--ink-soft);font-size:11.5px;}
   .nowbtn{margin-top:5px;font-size:11.5px;color:var(--accent);background:none;border:none;cursor:pointer;padding:2px 0;}
@@ -153,11 +153,14 @@
   </div>
 
   <section class="block"><h2>きょうの記録</h2><div class="card" id="todayList"></div></section>
-  <section class="block"><h2>このサイクルの記録</h2><div class="card" id="historyList"></div></section>
+  <section class="block"><h2>サイクルごとの記録</h2>
+    <div class="monthnav"><button id="histPrev">＜</button><div class="mlabel" id="histLabel" style="font-size:13px;"></div><button id="histNext">＞</button></div>
+    <div class="card" id="historyList"></div></section>
 </div>
 
 <div class="overlay" id="addOverlay"><div class="sheet">
   <h3>打刻を記録</h3>
+  <div class="field"><label>日付（打刻を忘れた日は、ここで変更）</label><input type="date" id="entryDate"></div>
   <div class="field"><label>種類</label>
     <div class="typegrid" id="typeGrid">
       <button data-t="出勤">出勤</button><button data-t="休憩入り">休憩入り</button>
@@ -165,8 +168,8 @@
       <button data-t="休憩2入り" class="b2">休憩2入り</button><button data-t="休憩2戻り" class="b2">休憩2戻り</button>
     </div>
   </div>
-  <div class="schedpreview"><span class="lbl">今日の予定：</span><span id="schedPreviewVal">-</span></div>
-  <div class="field"><label>実際に打刻した時刻</label>
+  <div class="schedpreview"><span class="lbl">この日の予定：</span><span id="schedPreviewVal">-</span></div>
+  <div class="field"><label>実際に打刻した時刻（忘れた場合は、実際に働いた時刻）</label>
     <input type="time" id="actualTime">
     <button class="nowbtn" id="useNow">今の時刻を使う</button>
   </div>
@@ -341,6 +344,8 @@
     // 深夜0時をまたいで打刻する場合、前日の「出勤」がまだ「退勤」していなければ、
     // その続きの打刻として前日の記録に入れる。
     var todayKey = isoDate(new Date());
+    var chosen = (document.getElementById('entryDate')||{}).value;
+    if (chosen && chosen !== todayKey) return chosen; // 日付を自分で選んだ場合は、その日に記録
     if (END_TYPES.indexOf(type) === -1) return todayKey;
     var y = new Date(); y.setDate(y.getDate()-1);
     var yKey = isoDate(y);
@@ -409,6 +414,7 @@
   }
 
   var expandedHistoryDay = null;
+  var histOffset = 0;
 
   function render(){
     applyB2();
@@ -484,12 +490,17 @@
 
     // history
     var histList = document.getElementById('historyList');
+    var hb = st.range.start;
+    var hs = new Date(hb.getFullYear(), hb.getMonth()+histOffset, hb.getDate());
+    var he = new Date(hs); he.setMonth(he.getMonth()+1); he.setDate(he.getDate()-1);
+    document.getElementById('histLabel').textContent = fmtMD(hs)+' 〜 '+fmtMD(he) + (histOffset===0 ? '（今のサイクル）' : '（前のサイクル）');
+    document.getElementById('histNext').style.visibility = histOffset<0 ? 'visible' : 'hidden';
     var keys = Object.keys(state.entries).filter(function(k){
       var d2 = new Date(k+'T00:00:00');
-      return d2 >= st.range.start && d2 <= st.range.end && k !== todayKey && state.entries[k].length>0;
+      return d2 >= hs && d2 <= he && !(histOffset===0 && k === todayKey) && state.entries[k].length>0;
     }).sort().reverse();
     if (keys.length===0) {
-      histList.innerHTML = '<div class="empty">このサイクルの他の記録はまだありません。</div>';
+      histList.innerHTML = '<div class="empty">'+(histOffset===0?'このサイクルの他の記録はまだありません。':'このサイクルの記録はありません。')+'</div>';
     } else {
       histList.innerHTML = '';
       keys.forEach(function(k){
@@ -518,6 +529,8 @@
       + '<button class="del" data-day="'+dayKey+'" data-idx="'+idx+'">✕</button></div>';
     return row;
   }
+  document.getElementById('histPrev').addEventListener('click', function(){ histOffset--; render(); });
+  document.getElementById('histNext').addEventListener('click', function(){ if (histOffset<0) { histOffset++; render(); } });
   document.addEventListener('click', function(ev){
     if (ev.target.classList.contains('del')) {
       var day = ev.target.getAttribute('data-day');
@@ -532,6 +545,12 @@
   var typeGrid = document.getElementById('typeGrid');
   var selectedType = '出勤';
   function suggestType(){
+    var chosenD = document.getElementById('entryDate').value;
+    if (chosenD && chosenD !== isoDate(new Date())) {
+      var doneC = (state.entries[chosenD]||[]).map(function(e){return e.type;});
+      for (var c=0;c<TYPES.length;c++){ if (doneC.indexOf(TYPES[c])===-1) return TYPES[c]; }
+      return TYPES[0];
+    }
     // 前日から続く夜勤（出勤はあるが退勤がまだ）があれば、まずそれを閉じる打刻を優先提案
     var y = new Date(); y.setDate(y.getDate()-1);
     var yKey = isoDate(y);
@@ -555,7 +574,9 @@
     if (ev.target.tagName!=='BUTTON') return;
     setTypeUI(ev.target.getAttribute('data-t'));
   });
+  document.getElementById('entryDate').addEventListener('change', function(){ setTypeUI(suggestType()); });
   document.getElementById('openAdd').addEventListener('click', function(){
+    var ed = document.getElementById('entryDate'); ed.max = isoDate(new Date()); ed.value = isoDate(new Date());
     setTypeUI(suggestType());
     var now = new Date();
     document.getElementById('actualTime').value = pad(now.getHours())+':'+pad(now.getMinutes());
@@ -573,10 +594,17 @@
     var sched = getSchedFor(todayKey, selectedType);
     if (!state.entries[todayKey]) state.entries[todayKey] = [];
     var delta = sched ? minutesDiff(selectedType, sched, actual) : 0;
+    var replaced = state.entries[todayKey].some(function(e){ return e.type===selectedType; });
+    state.entries[todayKey] = state.entries[todayKey].filter(function(e){ return e.type!==selectedType; });
     state.entries[todayKey].push({ type:selectedType, sched:sched, actual:actual, delta:delta });
+    state.entries[todayKey].sort(function(a,b){ return TYPES_B2.indexOf(a.type)-TYPES_B2.indexOf(b.type); });
     saveState();
     addOverlay.classList.remove('open');
+    // 保存した日が含まれるサイクルを表示する
+    (function(){ var cr = cycleRange(new Date()); var dd0 = new Date(todayKey+'T00:00:00'); var off = 0; while (off > -12 && dd0 < new Date(cr.start.getFullYear(), cr.start.getMonth()+off, cr.start.getDate())) off--; histOffset = off; })();
     render();
+    var ddn = new Date(todayKey+'T00:00:00');
+    if (todayKey !== isoDate(new Date()) || replaced) showToast(fmtMD(ddn)+' の '+selectedType+(replaced?' を上書きしました':' を記録しました'));
   });
 
   // ---- settings ----
